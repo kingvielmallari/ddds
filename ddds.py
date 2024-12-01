@@ -12,6 +12,8 @@ import numpy as np
 from EAR import eye_aspect_ratio
 from MAR import mouth_aspect_ratio
 from HeadPose import getHeadTiltAndCoords
+import datetime
+import winsound
 
 # initialize dlib's face detector (HOG-based) and then create the
 # facial landmark predictor
@@ -48,6 +50,8 @@ EYE_AR_THRESH = 0.25
 MOUTH_AR_THRESH = 0.79
 EYE_AR_CONSEC_FRAMES = 3
 COUNTER = 0
+ALARM_ON = False
+ALARM_START = None
 
 # grab the indexes of the facial landmarks for the mouth
 (mStart, mEnd) = (49, 68)
@@ -102,16 +106,19 @@ while True:
         # check to see if the eye aspect ratio is below the blink
         # threshold, and if so, increment the blink frame counter
         if ear < EYE_AR_THRESH:
-            COUNTER += 1
-            # if the eyes were closed for a sufficient number of times
-            # then show the warning
-            if COUNTER >= EYE_AR_CONSEC_FRAMES:
+            if not ALARM_ON:
+                ALARM_START = datetime.datetime.now()
+                ALARM_ON = True
+            elapsed_time = (datetime.datetime.now() - ALARM_START).total_seconds()
+            if elapsed_time >= 3:
+                winsound.Beep(1000, 2500)  # Beep sound for 4 seconds
                 cv2.putText(frame, "Eyes Closed!", (500, 20),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-            # otherwise, the eye aspect ratio is not below the blink
-            # threshold, so reset the counter and alarm
+                ALARM_ON = False  # Stop detection but keep camera running
+                ALARM_START = None
         else:
-            COUNTER = 0
+            ALARM_ON = False
+            ALARM_START = None
 
         mouth = shape[mStart:mEnd]
 
